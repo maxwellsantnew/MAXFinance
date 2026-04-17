@@ -105,10 +105,12 @@ export default function AIChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: apiMessages, financialContext: buildContext() }),
       })
+      if (!res.ok) throw new Error(`API error: ${res.status}`)
       const data = await res.json()
+      const reply = typeof data.reply === 'string' ? data.reply : 'Desculpe, não consegui processar sua pergunta.'
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.reply,
+        content: reply,
         time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       }])
     } catch {
@@ -120,14 +122,6 @@ export default function AIChat() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatText = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/•/g, '•')
-      .split('\n').map((line, i) => `<span key="${i}">${line}</span>`).join('<br/>')
   }
 
   return (
@@ -160,7 +154,7 @@ export default function AIChat() {
             )}
             <div>
               <div className={msg.role === 'user' ? 'bubble-user' : 'bubble-bot'}>
-                <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: formatText(msg.content) }} />
+                <p className="text-sm leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
               </div>
               <p className="text-xs mt-1 px-1" style={{ color: 'var(--text-muted)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>{msg.time}</p>
             </div>
