@@ -1,6 +1,6 @@
 {
-  "rootDirectory": "financeapp",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next"
+  "buildCommand": "cd financeapp && npm install && npm run build",
+  "outputDirectory": "financeapp/.next",
+  "installCommand": "cd financeapp && npm install",
+  "framework": "nextjs"
 }
