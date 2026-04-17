@@ -1,5 +1,1 @@
-{
-  "buildCommand": "npm run build --prefix financeapp",
-  "outputDirectory": "financeapp/.next",
-  "installCommand": "npm install --prefix financeapp"
-}
+{}
