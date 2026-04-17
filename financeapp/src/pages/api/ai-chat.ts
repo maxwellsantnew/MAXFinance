@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+const API_TIMEOUT_MS = 15000
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -44,23 +46,26 @@ Exemplos de perguntas que você responde:
 
   try {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000)
+    const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages,
-      }),
-      signal: controller.signal,
-    })
+    const response = await fetch(
+      'https://api.anthropic.com/v1/messages',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages,
+        }),
+        signal: controller.signal,
+      }
+    )
     clearTimeout(timeout)
 
     const data = await response.json() as {
@@ -77,7 +82,10 @@ Exemplos de perguntas que você responde:
     const text = data.content?.map((c) => c.type === 'text' ? c.text : '').join('') || 'Desculpe, não consegui processar sua pergunta.'
     
     res.json({ reply: text })
-  } catch {
-    res.status(500).json({ reply: 'Erro ao conectar com o assistente. Tente novamente.' })
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError') {
+      return res.status(504).json({ reply: 'O assistente demorou para responder. Tente novamente.' })
+    }
+    return res.status(500).json({ reply: 'Erro ao conectar com o assistente. Tente novamente.' })
   }
 }
