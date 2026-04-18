@@ -35,10 +35,10 @@ export default function Home() {
 
   // Show onboarding if no name set
   useEffect(() => {
-    if (!userName) {
-      setTimeout(() => setShowOnboarding(true), 800)
-    }
-  }, [])
+    if (userName) return
+    const timer = setTimeout(() => setShowOnboarding(true), 800)
+    return () => clearTimeout(timer)
+  }, [userName])
 
   // Daily spending notification
   useEffect(() => {
