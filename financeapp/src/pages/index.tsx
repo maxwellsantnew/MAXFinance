@@ -5,8 +5,9 @@ import Transactions from '@/components/Transactions'
 import Bills from '@/components/Bills'
 import Banks from '@/components/Banks'
 import Analytics from '@/components/Analytics'
-import AIChat from '@/components/AIChat'
-import { LayoutDashboard, ArrowLeftRight, CalendarCheck, Landmark, PieChart, Bot, Settings, X, Bell } from 'lucide-react'
+import dynamic from 'next/dynamic'
+const AIChat = dynamic(() => import('@/components/AIChat'), { ssr: false })
+import { LayoutDashboard, ArrowLeftRight, CalendarCheck, Landmark, PieChart, Bot, Settings, X, Bell, Trash2 } from 'lucide-react'
 import { formatCurrency, getCurrentMonth } from '@/lib/utils'
 
 type Tab = 'dashboard' | 'transactions' | 'bills' | 'banks' | 'analytics' | 'ai'
@@ -56,10 +57,19 @@ export default function Home() {
   const [onboardName, setOnboardName] = useState('')
   const [onboardIncome, setOnboardIncome] = useState('')
 
+  const handleClearData = () => {
+    if (confirm('Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.')) {
+      localStorage.removeItem('finance-store')
+      window.location.reload()
+    }
+  }
+
   const handleOnboard = () => {
     if (onboardName.trim()) {
       setUserName(onboardName.trim())
-      if (onboardIncome) setMonthlyIncome(parseFloat(onboardIncome.replace(',', '.')) || 0)
+      if (onboardIncome) {
+        setMonthlyIncome(parseFloat(onboardIncome.replace(',', '.')) || 0)
+      }
       setShowOnboarding(false)
     }
   }
@@ -216,8 +226,11 @@ export default function Home() {
             <div className="rounded-2xl p-4 space-y-2" style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)' }}>
               <p className="text-sm font-semibold">🔒 Privacidade & Segurança</p>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Seus dados financeiros são armazenados <strong>exclusivamente no seu dispositivo</strong> (LocalStorage). Nenhuma informação pessoal é enviada a servidores externos. O assistente IA usa apenas dados anônimos do contexto da conversa.
+                Seus dados financeiros são armazenados <strong>criptografados no seu dispositivo</strong> (LocalStorage). Nenhuma informação pessoal é enviada a servidores externos. O assistente IA usa apenas dados anônimos do contexto da conversa.
               </p>
+              <button onClick={handleClearData} className="btn-danger flex items-center gap-2 w-full justify-center py-2 text-xs">
+                <Trash2 size={14} /> Apagar Todos os Dados
+              </button>
             </div>
 
             <div className="rounded-2xl p-4" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>

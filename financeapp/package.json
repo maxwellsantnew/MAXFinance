@@ -6,28 +6,40 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "security:check": "npm audit --audit-level=moderate",
+    "deps:check": "npm outdated",
+    "deps:update": "npm update",
+    "build:analyze": "ANALYZE=true next build",
+    "test:security": "npm run lint && npm run audit:fix",
+    "clean": "rm -rf .next node_modules/.cache"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0",
+    "date-fns": "^3.6.0",
+    "dompurify": "^3.3.3",
+    "lucide-react": "^0.383.0",
     "next": "14.2.0",
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^2.12.7",
-    "lucide-react": "^0.383.0",
-    "date-fns": "^3.6.0",
-    "zustand": "^4.5.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^9.0.8",
     "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.0"
+    "typescript": "^5"
   }
 }

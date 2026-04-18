@@ -1,5 +1,33 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import CryptoJS from 'crypto-js'
+
+const ENCRYPTION_KEY = 'finance-ai-secure-key-2024' // In production, use a more secure key or derive from user
+
+const encryptedStorage = {
+  getItem: (name: string) => {
+    if (typeof window === 'undefined') return null
+    const item = localStorage.getItem(name)
+    if (item) {
+      try {
+        const bytes = CryptoJS.AES.decrypt(item, ENCRYPTION_KEY)
+        return JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+      } catch {
+        return null
+      }
+    }
+    return null
+  },
+  setItem: (name: string, value: any) => {
+    if (typeof window === 'undefined') return
+    const encrypted = CryptoJS.AES.encrypt(JSON.stringify(value), ENCRYPTION_KEY).toString()
+    localStorage.setItem(name, encrypted)
+  },
+  removeItem: (name: string) => {
+    if (typeof window === 'undefined') return
+    localStorage.removeItem(name)
+  },
+}
 
 export type Category = 
   | 'alimentação' | 'transporte' | 'moradia' | 'saúde' 
@@ -95,6 +123,9 @@ export const useFinanceStore = create<FinanceStore>()(
       setMonthlyIncome: (v) => set({ monthlyIncome: v }),
       setUserName: (name) => set({ userName: name }),
     }),
-    { name: 'finance-store' }
+    { 
+      name: 'finance-store',
+      storage: createJSONStorage(() => encryptedStorage)
+    }
   )
 )

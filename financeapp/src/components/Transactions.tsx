@@ -150,7 +150,7 @@ export default function Transactions() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
           <div className="w-full max-w-lg flex flex-col rounded-t-3xl animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh' }}>
-          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div className="p-6 pb-2 space-y-4 overflow-y-auto flex-1">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Transação</h2>
               <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
@@ -217,10 +217,11 @@ export default function Transactions() {
 
             </div>
 
-            <div className="p-4 pt-0">
-            <button className="btn-primary w-full py-3 text-base" onClick={handleSubmit}>
-              Registrar Transação
-            </button>
+            {/* Botão fixo no rodapé */}
+            <div className="p-4" style={{ borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+              <button className="btn-primary w-full py-3 text-base" onClick={handleSubmit}>
+                Registrar Transação
+              </button>
             </div>
           </div>
         </div>

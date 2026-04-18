@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useFinanceStore } from '@/lib/store'
-import { formatCurrency, getCurrentMonth } from '@/lib/utils'
+import { getCurrentMonth, getRange, getPercentRange } from '@/lib/utils'
 import { Send, Bot, Sparkles } from 'lucide-react'
+import DOMPurify from 'dompurify'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -55,37 +56,31 @@ export default function AIChat() {
       return !b.paid && b.dueDay >= today && b.dueDay <= today + 7 && b.month === currentMonth
     })
     
+    // Anonymize data: use ranges instead of exact values
+    
     return {
       usuario: store.userName || 'usuário',
       dataHoje: new Date().toLocaleDateString('pt-BR'),
-      gastosHoje: formatCurrency(todayExpense),
-      transacoesHoje: todayTx.filter(t => t.type === 'expense').map(t => ({ desc: t.description, valor: formatCurrency(t.amount), cat: t.category })),
+      gastosHoje: getRange(todayExpense),
+      transacoesHoje: todayTx.filter(t => t.type === 'expense').length, // count only
       mesAtual: {
-        gastoTotal: formatCurrency(monthExpense),
-        receitaTotal: formatCurrency(monthIncome),
-        saldo: formatCurrency(monthIncome - monthExpense),
-        gastosPorCategoria: Object.entries(catMap).sort((a, b) => b[1] - a[1]).map(([cat, v]) => ({ categoria: cat, valor: formatCurrency(v) })),
+        gastoTotal: getRange(monthExpense),
+        receitaTotal: getRange(monthIncome),
+        saldo: monthIncome - monthExpense > 0 ? 'positivo' : 'negativo',
+        gastosPorCategoria: Object.keys(catMap).sort((a, b) => catMap[b] - catMap[a]).slice(0, 3), // top 3 categories only
       },
-      bancos: store.banks.map(b => ({ nome: b.name, saldo: formatCurrency(b.balance), tipo: b.type })),
-      saldoBancarioTotal: formatCurrency(store.banks.reduce((a, b) => a + b.balance, 0)),
+      bancos: store.banks.length, // count only
+      saldoBancarioTotal: getRange(store.banks.reduce((a, b) => a + b.balance, 0)),
       cartoes: store.creditCards.map(c => ({
-        nome: c.name,
-        limite: formatCurrency(c.limit),
-        usado: formatCurrency(c.used),
-        disponivel: formatCurrency(c.limit - c.used),
-        percentUsado: `${c.limit > 0 ? ((c.used / c.limit) * 100).toFixed(0) : 0}%`,
+        percentUsado: getPercentRange(c.used, c.limit),
         venceDia: c.dueDay,
-        fechaDia: c.closingDay,
       })),
-      contasVencendoEssaSemana: weekBills.map(b => ({ nome: b.name, valor: formatCurrency(b.amount), diaVencimento: b.dueDay })),
-      totalAPagarMes: formatCurrency(store.bills.filter(b => !b.paid && b.month === currentMonth).reduce((a, b) => a + b.amount, 0)),
-      ultimasTransacoes: store.transactions.slice(0, 10).map(t => ({
+      contasVencendoEssaSemana: weekBills.length, // count only
+      totalAPagarMes: getRange(store.bills.filter(b => !b.paid && b.month === currentMonth).reduce((a, b) => a + b.amount, 0)),
+      ultimasTransacoes: store.transactions.slice(0, 5).map(t => ({
         tipo: t.type === 'expense' ? 'gasto' : 'entrada',
-        descricao: t.description,
-        valor: formatCurrency(t.amount),
         categoria: t.category,
-        data: new Date(t.date).toLocaleDateString('pt-BR'),
-      }))
+      })) // no amounts or descriptions
     }
   }
 
@@ -122,6 +117,14 @@ export default function AIChat() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const formatText = (text: string) => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/•/g, '•')
+      .split('\n').map((line, i) => `<span key="${i}">${line}</span>`).join('<br/>')
   }
 
   return (

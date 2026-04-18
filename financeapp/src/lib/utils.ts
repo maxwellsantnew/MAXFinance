@@ -57,3 +57,19 @@ export const BANK_ICONS: Record<string, string> = {
   xp: '🟢',
   outros: '🏦',
 }
+
+// Funções de anonimização para IA
+export const getRange = (value: number) => {
+  if (value === 0) return 'nenhum'
+  if (value < 100) return 'baixo'
+  if (value < 1000) return 'médio'
+  if (value < 10000) return 'alto'
+  return 'muito alto'
+}
+
+export const getPercentRange = (used: number, limit: number) => {
+  const percent = limit > 0 ? (used / limit) * 100 : 0
+  if (percent < 30) return 'baixo'
+  if (percent < 70) return 'médio'
+  return 'alto'
+}
