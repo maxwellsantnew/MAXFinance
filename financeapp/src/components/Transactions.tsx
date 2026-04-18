@@ -148,15 +148,18 @@ export default function Transactions() {
 
       {/* Add Transaction Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-end justify-center" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg flex flex-col rounded-t-3xl animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 24px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="p-6 pb-2 space-y-4 overflow-y-auto flex-1">
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-sheet animate-slide-up">
+          <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Transação</h2>
               <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
                 <X size={18} />
               </button>
             </div>
+          </div>
+
+          <div className="modal-sheet-body space-y-4">
 
             {/* Type toggle */}
             <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
@@ -217,10 +220,9 @@ export default function Transactions() {
 
             </div>
 
-            {/* Botão fixo no rodapé */}
-            <div className="p-4" style={{ borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+            <div className="modal-sheet-footer">
               <button className="btn-primary w-full py-3 text-base" onClick={handleSubmit}>
-                Registrar Transação
+                Confirmar Transação
               </button>
             </div>
           </div>

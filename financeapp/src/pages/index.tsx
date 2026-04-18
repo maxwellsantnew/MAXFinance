@@ -206,13 +206,16 @@ export default function Home() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-5 animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-sheet animate-slide-up">
+            <div className="modal-sheet-header">
+              <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Configurações</h2>
               <button onClick={() => setShowSettings(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
+              </div>
             </div>
 
+            <div className="modal-sheet-body space-y-5">
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Seu nome</label>
               <input className="fin-input" value={userName} onChange={e => setUserName(e.target.value)} placeholder="Seu nome" />
@@ -239,8 +242,11 @@ export default function Home() {
                 Em breve você poderá consultar seus gastos via WhatsApp com o FinBot, diretamente pelo número oficial do app.
               </p>
             </div>
+            </div>
 
-            <button className="btn-primary w-full py-3" onClick={() => setShowSettings(false)}>Salvar</button>
+            <div className="modal-sheet-footer">
+              <button className="btn-primary w-full py-3" onClick={() => setShowSettings(false)}>Salvar</button>
+            </div>
           </div>
         </div>
       )}

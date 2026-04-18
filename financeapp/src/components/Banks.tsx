@@ -44,8 +44,6 @@ export default function Banks() {
     setEditBalance('')
   }
 
-  const BANK_OPTIONS = Object.keys(BANK_ICONS).filter(k => k !== 'outros')
-
   return (
     <div className="page-content p-4 space-y-4">
       <div className="animate-slide-up">
@@ -208,16 +206,20 @@ export default function Banks() {
 
       {/* Bank Modal */}
       {showBankModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4 animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-sheet animate-slide-up">
+            <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Adicionar Conta</h2>
               <button onClick={() => setShowBankModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
             </div>
+            </div>
+
+            <div className="modal-sheet-body space-y-4">
 
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Banco</label>
-              <div className="grid grid-cols-4 gap-2 mb-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
                 {Object.entries(BANK_ICONS).map(([key, emoji]) => (
                   <button key={key} onClick={() => setBankForm(f => ({ ...f, icon: key, name: key !== 'outros' ? key.charAt(0).toUpperCase() + key.slice(1) : f.name }))}
                     className="py-2 rounded-xl text-center text-sm capitalize transition-all" style={{
@@ -252,19 +254,27 @@ export default function Banks() {
                 ))}
               </div>
             </div>
-            <button className="btn-primary w-full py-3" onClick={handleAddBank}>Adicionar Conta</button>
+            </div>
+
+            <div className="modal-sheet-footer">
+              <button className="btn-primary w-full py-3" onClick={handleAddBank}>Confirmar Conta</button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Card Modal */}
       {showCardModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4 animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-sheet animate-slide-up">
+            <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Adicionar Cartão</h2>
               <button onClick={() => setShowCardModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
             </div>
+            </div>
+
+            <div className="modal-sheet-body space-y-4">
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Nome do cartão</label>
               <input className="fin-input" placeholder="Ex: Nubank, Itaú Visa..." value={cardForm.name} onChange={e => setCardForm(f => ({ ...f, name: e.target.value }))} />
@@ -289,7 +299,11 @@ export default function Banks() {
                 <input className="fin-input" type="number" min="1" max="31" value={cardForm.dueDay} onChange={e => setCardForm(f => ({ ...f, dueDay: e.target.value }))} />
               </div>
             </div>
-            <button className="btn-primary w-full py-3" onClick={handleAddCard}>Adicionar Cartão</button>
+            </div>
+
+            <div className="modal-sheet-footer">
+              <button className="btn-primary w-full py-3" onClick={handleAddCard}>Confirmar Cartão</button>
+            </div>
           </div>
         </div>
       )}

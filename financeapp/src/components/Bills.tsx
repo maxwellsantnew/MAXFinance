@@ -137,12 +137,16 @@ export default function Bills() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4 animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="modal-sheet animate-slide-up">
+            <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Conta</h2>
               <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
             </div>
+            </div>
+
+            <div className="modal-sheet-body space-y-4">
 
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Nome da conta</label>
@@ -162,7 +166,7 @@ export default function Bills() {
 
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Categoria</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {BILL_CATEGORIES.map(c => (
                   <button key={c} onClick={() => setForm(f => ({ ...f, category: c }))} className="py-2 rounded-xl text-center text-xs flex flex-col items-center gap-1 transition-all" style={{
                     background: form.category === c ? CATEGORY_COLORS[c] + '33' : 'var(--bg-card2)',
@@ -175,8 +179,11 @@ export default function Bills() {
                 ))}
               </div>
             </div>
+            </div>
 
-            <button className="btn-primary w-full py-3" onClick={handleAdd}>Adicionar Conta</button>
+            <div className="modal-sheet-footer">
+              <button className="btn-primary w-full py-3" onClick={handleAdd}>Confirmar Conta</button>
+            </div>
           </div>
         </div>
       )}

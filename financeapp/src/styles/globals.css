@@ -258,6 +258,67 @@ h1, h2, h3, h4 { font-family: var(--font-display); }
   padding-bottom: 80px;
 }
 
+/* Mobile sheet modal with internal scroll */
+.modal-sheet {
+  width: 100%;
+  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  max-height: calc(100vh - 88px);
+  max-height: calc(100dvh - 88px);
+}
+
+.modal-sheet-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 16px 16px 12px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, rgba(17,24,39,0.98) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+
+.modal-sheet-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15,23,42,0.75) 0%, var(--bg-card) 22%);
+  padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .modal-sheet {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .modal-sheet-header {
+    padding: 20px 24px 14px;
+  }
+
+  .modal-sheet-body {
+    padding: 20px 24px 14px;
+  }
+
+  .modal-sheet-footer {
+    padding: 14px 16px;
+  }
+}
+
 /* Chat bubble */
 .bubble-user {
   background: linear-gradient(135deg, #1d4ed8, #3b82f6);
