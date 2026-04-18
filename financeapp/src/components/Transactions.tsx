@@ -149,7 +149,8 @@ export default function Transactions() {
       {/* Add Transaction Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-t-3xl p-6 space-y-4 animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="w-full max-w-lg flex flex-col rounded-t-3xl animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh' }}>
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Transação</h2>
               <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
@@ -184,7 +185,7 @@ export default function Transactions() {
             {form.type === 'expense' && (
               <div>
                 <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Categoria</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {CATEGORIES.map(c => (
                     <button key={c} onClick={() => setForm(f => ({ ...f, category: c }))} className="p-2 rounded-xl text-xs flex flex-col items-center gap-1 transition-all" style={{
                       background: form.category === c ? CATEGORY_COLORS[c] + '33' : 'var(--bg-card2)',
@@ -201,7 +202,7 @@ export default function Transactions() {
 
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Forma de pagamento</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(['pix', 'dinheiro', 'débito', 'crédito'] as const).map(m => (
                   <button key={m} onClick={() => setForm(f => ({ ...f, paymentMethod: m }))} className="py-2 rounded-xl text-xs font-medium transition-all capitalize" style={{
                     background: form.paymentMethod === m ? 'var(--accent)' : 'var(--bg-card2)',
@@ -214,9 +215,13 @@ export default function Transactions() {
               </div>
             </div>
 
+            </div>
+
+            <div className="p-4 pt-0">
             <button className="btn-primary w-full py-3 text-base" onClick={handleSubmit}>
               Registrar Transação
             </button>
+            </div>
           </div>
         </div>
       )}
