@@ -148,8 +148,8 @@ export default function Transactions() {
 
       {/* Add Transaction Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg flex flex-col rounded-t-3xl animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh' }}>
+        <div className="fixed inset-0 flex items-end justify-center" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-lg flex flex-col rounded-t-3xl animate-slide-up" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 24px)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="p-6 pb-2 space-y-4 overflow-y-auto flex-1">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Transação</h2>
