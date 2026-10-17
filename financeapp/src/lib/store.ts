@@ -71,6 +71,16 @@ export interface Bank {
   icon: string
 }
 
+export interface AgentNote {
+  id: string
+  agentId: string
+  createdAt: string
+  message: string
+  severity: 'info' | 'warning' | 'critical'
+  dismissed: boolean
+  relatedTransactionIds?: string[]
+}
+
 interface FinanceStore {
   transactions: Transaction[]
   bills: Bill[]
@@ -78,10 +88,14 @@ interface FinanceStore {
   banks: Bank[]
   monthlyIncome: number
   userName: string
+  categoryBudgets: Partial<Record<Category, number>>
+  dismissedAgentNoteIds: string[]
+  categoryCorrections: Partial<Record<string, Category>>
   
   // Actions
   addTransaction: (t: Transaction) => void
   removeTransaction: (id: string) => void
+  updateTransactionCategory: (id: string, category: Category) => void
   addBill: (b: Bill) => void
   toggleBillPaid: (id: string) => void
   removeBill: (id: string) => void
@@ -93,6 +107,10 @@ interface FinanceStore {
   removeBank: (id: string) => void
   setMonthlyIncome: (v: number) => void
   setUserName: (name: string) => void
+  setCategoryBudget: (category: Category, amount: number) => void
+  removeCategoryBudget: (category: Category) => void
+  dismissAgentNote: (id: string) => void
+  learnCategoryCorrection: (descriptionKey: string, category: Category) => void
 }
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -104,9 +122,15 @@ export const useFinanceStore = create<FinanceStore>()(
       banks: [],
       monthlyIncome: 0,
       userName: '',
+      categoryBudgets: {},
+      dismissedAgentNoteIds: [],
+      categoryCorrections: {},
 
       addTransaction: (t) => set((s) => ({ transactions: [t, ...s.transactions] })),
       removeTransaction: (id) => set((s) => ({ transactions: s.transactions.filter(t => t.id !== id) })),
+      updateTransactionCategory: (id, category) => set((s) => ({
+        transactions: s.transactions.map(t => t.id === id ? { ...t, category } : t)
+      })),
       
       addBill: (b) => set((s) => ({ bills: [b, ...s.bills] })),
       toggleBillPaid: (id) => set((s) => ({ bills: s.bills.map(b => b.id === id ? { ...b, paid: !b.paid } : b) })),
@@ -122,6 +146,21 @@ export const useFinanceStore = create<FinanceStore>()(
       
       setMonthlyIncome: (v) => set({ monthlyIncome: v }),
       setUserName: (name) => set({ userName: name }),
+
+      setCategoryBudget: (category, amount) => set((s) => ({
+        categoryBudgets: { ...s.categoryBudgets, [category]: amount }
+      })),
+      removeCategoryBudget: (category) => set((s) => {
+        const next = { ...s.categoryBudgets }
+        delete next[category]
+        return { categoryBudgets: next }
+      }),
+      dismissAgentNote: (id) => set((s) => ({
+        dismissedAgentNoteIds: s.dismissedAgentNoteIds.includes(id) ? s.dismissedAgentNoteIds : [...s.dismissedAgentNoteIds, id]
+      })),
+      learnCategoryCorrection: (descriptionKey, category) => set((s) => ({
+        categoryCorrections: { ...s.categoryCorrections, [descriptionKey]: category }
+      })),
     }),
     { 
       name: 'finance-store',
