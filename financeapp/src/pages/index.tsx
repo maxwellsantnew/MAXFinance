@@ -5,12 +5,13 @@ import Transactions from '@/components/Transactions'
 import Bills from '@/components/Bills'
 import Banks from '@/components/Banks'
 import Analytics from '@/components/Analytics'
+import Agents from '@/components/Agents'
 import dynamic from 'next/dynamic'
 const AIChat = dynamic(() => import('@/components/AIChat'), { ssr: false })
-import { LayoutDashboard, ArrowLeftRight, CalendarCheck, Landmark, PieChart, Bot, Settings, X, Bell, Trash2 } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, CalendarCheck, Landmark, PieChart, Bot, Settings, X, Bell, Trash2, Sparkles } from 'lucide-react'
 import { formatCurrency, getCurrentMonth } from '@/lib/utils'
 
-type Tab = 'dashboard' | 'transactions' | 'bills' | 'banks' | 'analytics' | 'ai'
+type Tab = 'dashboard' | 'transactions' | 'bills' | 'banks' | 'analytics' | 'agents' | 'ai'
 
 interface NavItem {
   id: Tab
@@ -24,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'bills', label: 'Contas', icon: CalendarCheck },
   { id: 'banks', label: 'Bancos', icon: Landmark },
   { id: 'analytics', label: 'Planilha', icon: PieChart },
+  { id: 'agents', label: 'Agentes', icon: Sparkles },
   { id: 'ai', label: 'FinBot', icon: Bot },
 ]
 
@@ -118,6 +120,7 @@ export default function Home() {
         {tab === 'bills' && <Bills />}
         {tab === 'banks' && <Banks />}
         {tab === 'analytics' && <Analytics />}
+        {tab === 'agents' && <Agents />}
         {tab === 'ai' && <AIChat />}
       </div>
 

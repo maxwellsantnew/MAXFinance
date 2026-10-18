@@ -1,26 +1,51 @@
 import { useState, useMemo } from 'react'
 import { useFinanceStore, Category } from '@/lib/store'
 import { formatCurrency, formatDate, getCurrentMonth, CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/utils'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, X, Pencil } from 'lucide-react'
 import { v4 as uuid } from 'uuid'
 
 const CATEGORIES: Category[] = ['alimentação', 'transporte', 'moradia', 'saúde', 'lazer', 'educação', 'vestuário', 'investimento', 'cartão', 'outros']
 
+const createEmptyForm = () => ({
+  type: 'expense' as 'expense' | 'income',
+  amount: '',
+  description: '',
+  category: 'alimentação' as Category,
+  paymentMethod: 'pix' as 'pix' | 'dinheiro' | 'débito' | 'crédito',
+  date: new Date().toISOString().slice(0, 10),
+  cardId: '',
+})
+
 export default function Transactions() {
-  const { transactions, addTransaction, removeTransaction, creditCards, updateCreditCard } = useFinanceStore()
+  const { transactions, addTransaction, updateTransaction, removeTransaction, creditCards, updateCreditCard } = useFinanceStore()
   const [showModal, setShowModal] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'expense' | 'income'>('all')
   const [filterCat, setFilterCat] = useState<string>('all')
 
-  const [form, setForm] = useState({
-    type: 'expense' as 'expense' | 'income',
-    amount: '',
-    description: '',
-    category: 'alimentação' as Category,
-    paymentMethod: 'pix' as 'pix' | 'dinheiro' | 'débito' | 'crédito',
-    date: new Date().toISOString().slice(0, 10),
-    cardId: '',
-  })
+  const [form, setForm] = useState(createEmptyForm)
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingId(null)
+    setForm(createEmptyForm())
+  }
+
+  const openEditModal = (id: string) => {
+    const transaction = transactions.find(t => t.id === id)
+    if (!transaction) return
+    setEditingId(id)
+    setForm({
+      type: transaction.type,
+      amount: String(transaction.amount),
+      description: transaction.description,
+      category: transaction.category,
+      paymentMethod: transaction.paymentMethod,
+      date: transaction.date.slice(0, 10),
+      cardId: transaction.cardId || '',
+    })
+    setShowModal(true)
+  }
 
   const currentMonth = getCurrentMonth()
   const filtered = useMemo(() => {
@@ -43,24 +68,37 @@ export default function Transactions() {
     const amount = parseFloat(form.amount.replace(',', '.'))
     if (!amount || !form.description.trim()) return
 
-    addTransaction({
-      id: uuid(),
+    const existing = editingId ? transactions.find(t => t.id === editingId) : undefined
+    if (editingId && !existing) return
+
+    const transaction = {
       type: form.type,
       amount,
       description: form.description.trim(),
       category: form.type === 'income' ? 'receita' : form.category,
       paymentMethod: form.paymentMethod,
-      date: new Date().toISOString(),
-    })
-
-    // Update card usage if credit payment
-    if (form.type === 'expense' && form.paymentMethod === 'crédito' && form.cardId) {
-      const card = creditCards.find(c => c.id === form.cardId)
-      if (card) updateCreditCard(card.id, card.used + amount)
+      date: new Date(`${form.date}T00:00:00.000Z`).toISOString(),
+      cardId: form.type === 'expense' && form.paymentMethod === 'crédito' ? form.cardId || undefined : undefined,
     }
 
-    setForm({ type: 'expense', amount: '', description: '', category: 'alimentação', paymentMethod: 'pix', date: new Date().toISOString().slice(0, 10), cardId: '' })
-    setShowModal(false)
+    const cardUsageChanges = new Map<string, number>()
+    if (existing?.type === 'expense' && existing.paymentMethod === 'crédito' && existing.cardId) {
+      cardUsageChanges.set(existing.cardId, (cardUsageChanges.get(existing.cardId) || 0) - existing.amount)
+    }
+    if (transaction.type === 'expense' && transaction.paymentMethod === 'crédito' && transaction.cardId) {
+      cardUsageChanges.set(transaction.cardId, (cardUsageChanges.get(transaction.cardId) || 0) + amount)
+    }
+    cardUsageChanges.forEach((change, cardId) => {
+      const card = creditCards.find(c => c.id === cardId)
+      if (card && change !== 0) updateCreditCard(card.id, Math.max(0, card.used + change))
+    })
+
+    if (editingId) {
+      updateTransaction(editingId, transaction)
+    } else {
+      addTransaction({ id: uuid(), ...transaction })
+    }
+    closeModal()
   }
 
   return (
@@ -71,7 +109,7 @@ export default function Transactions() {
           <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>Transações</h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Registre seus gastos e entradas</p>
         </div>
-        <button className="btn-primary flex items-center gap-1.5 py-2 px-4" onClick={() => setShowModal(true)}>
+        <button className="btn-primary flex items-center gap-1.5 py-2 px-4" onClick={() => { setEditingId(null); setForm(createEmptyForm()); setShowModal(true) }}>
           <Plus size={16} /> Nova
         </button>
       </div>
@@ -141,6 +179,9 @@ export default function Transactions() {
               <button onClick={() => removeTransaction(t.id)} className="p-1 rounded-lg transition-colors hover:bg-red-500/10">
                 <Trash2 size={13} style={{ color: 'var(--text-muted)' }} />
               </button>
+              <button onClick={() => openEditModal(t.id)} className="p-1 rounded-lg transition-colors hover:bg-blue-500/10" aria-label="Editar transação">
+                <Pencil size={13} style={{ color: 'var(--text-muted)' }} />
+              </button>
             </div>
           </div>
         ))}
@@ -148,12 +189,12 @@ export default function Transactions() {
 
       {/* Add Transaction Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" onClick={event => { if (event.target === event.currentTarget) closeModal() }} style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
           <div className="modal-sheet animate-slide-up">
           <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Transação</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>{editingId ? 'Editar Transação' : 'Nova Transação'}</h2>
+              <button onClick={closeModal} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
                 <X size={18} />
               </button>
             </div>
@@ -164,7 +205,7 @@ export default function Transactions() {
             {/* Type toggle */}
             <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: 'var(--bg-card2)' }}>
               {(['expense', 'income'] as const).map(t => (
-                <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))} className="py-2.5 rounded-lg text-sm font-semibold transition-all" style={{
+                <button key={t} onClick={() => setForm(f => ({ ...f, type: t, cardId: t === 'income' ? '' : f.cardId }))} className="py-2.5 rounded-lg text-sm font-semibold transition-all" style={{
                   background: form.type === t ? (t === 'income' ? '#10b981' : '#ef4444') : 'transparent',
                   color: form.type === t ? 'white' : 'var(--text-muted)',
                 }}>
@@ -177,6 +218,11 @@ export default function Transactions() {
               <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Valor</label>
               <input className="fin-input text-xl font-bold" placeholder="R$ 0,00" value={form.amount}
                 onChange={e => setForm(f => ({ ...f, amount: e.target.value.replace(/[^0-9,.]/g, '') }))} />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Data</label>
+              <input className="fin-input" type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </div>
 
             <div>
@@ -218,14 +264,31 @@ export default function Transactions() {
               </div>
             </div>
 
+            {form.type === 'expense' && form.paymentMethod === 'crédito' && (
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Cartão de crédito</label>
+                {creditCards.length > 0 ? (
+                  <select className="fin-input" value={form.cardId} onChange={e => setForm(f => ({ ...f, cardId: e.target.value }))}>
+                    <option value="">Selecione um cartão</option>
+                    {creditCards.map(card => <option key={card.id} value={card.id}>{card.name}</option>)}
+                  </select>
+                ) : (
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Cadastre um cartão antes de associá-lo à transação.</p>
+                )}
+              </div>
+            )}
+
             </div>
 
             <div className="modal-sheet-footer">
               <button className="btn-primary w-full py-3 text-base" onClick={handleSubmit}>
-                Confirmar Transação
+                {editingId ? 'Salvar Alterações' : 'Confirmar Transação'}
               </button>
             </div>
           </div>
+          <button onClick={closeModal} className="fixed p-2 rounded-xl" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)', right: 'calc(env(safe-area-inset-right, 0px) + 16px)', zIndex: 10000, background: 'var(--bg-card2)' }} aria-label="Fechar modal">
+            <X size={18} />
+          </button>
         </div>
       )}
     </div>

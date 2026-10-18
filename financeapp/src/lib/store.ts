@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import CryptoJS from 'crypto-js'
+import { v4 as uuid } from 'uuid'
 
 const ENCRYPTION_KEY = 'finance-ai-secure-key-2024' // In production, use a more secure key or derive from user
 
@@ -42,6 +43,7 @@ export interface Transaction {
   category: Category
   date: string
   paymentMethod: 'pix' | 'dinheiro' | 'débito' | 'crédito'
+  cardId?: string
 }
 
 export interface Bill {
@@ -52,6 +54,8 @@ export interface Bill {
   category: Category
   paid: boolean
   month: string
+  isFixed?: boolean
+  templateId?: string
 }
 
 export interface CreditCard {
@@ -95,10 +99,13 @@ interface FinanceStore {
   // Actions
   addTransaction: (t: Transaction) => void
   removeTransaction: (id: string) => void
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void
   updateTransactionCategory: (id: string, category: Category) => void
   addBill: (b: Bill) => void
+  updateBill: (id: string, updates: Partial<Bill>) => void
   toggleBillPaid: (id: string) => void
   removeBill: (id: string) => void
+  rolloverFixedBills: (currentMonth: string) => void
   addCreditCard: (c: CreditCard) => void
   updateCreditCard: (id: string, used: number) => void
   removeCreditCard: (id: string) => void
@@ -128,13 +135,42 @@ export const useFinanceStore = create<FinanceStore>()(
 
       addTransaction: (t) => set((s) => ({ transactions: [t, ...s.transactions] })),
       removeTransaction: (id) => set((s) => ({ transactions: s.transactions.filter(t => t.id !== id) })),
+      updateTransaction: (id, updates) => set((s) => ({
+        transactions: s.transactions.map(t => t.id === id ? { ...t, ...updates, id } : t)
+      })),
       updateTransactionCategory: (id, category) => set((s) => ({
         transactions: s.transactions.map(t => t.id === id ? { ...t, category } : t)
       })),
       
       addBill: (b) => set((s) => ({ bills: [b, ...s.bills] })),
+      updateBill: (id, updates) => set((s) => ({
+        bills: s.bills.map(b => b.id === id ? { ...b, ...updates, id } : b)
+      })),
       toggleBillPaid: (id) => set((s) => ({ bills: s.bills.map(b => b.id === id ? { ...b, paid: !b.paid } : b) })),
       removeBill: (id) => set((s) => ({ bills: s.bills.filter(b => b.id !== id) })),
+      rolloverFixedBills: (currentMonth) => set((s) => {
+        const series = new Map<string, Bill[]>()
+        s.bills.forEach(bill => {
+          const templateId = bill.templateId || (bill.isFixed ? bill.id : undefined)
+          if (!templateId) return
+          series.set(templateId, [...(series.get(templateId) || []), bill])
+        })
+
+        const newBills: Bill[] = []
+        series.forEach((instances, templateId) => {
+          const latest = instances.reduce((current, bill) => bill.month > current.month ? bill : current)
+          if (!latest.isFixed || instances.some(bill => bill.month === currentMonth)) return
+          newBills.push({
+            ...latest,
+            id: uuid(),
+            templateId,
+            paid: false,
+            month: currentMonth,
+          })
+        })
+
+        return newBills.length ? { bills: [...newBills, ...s.bills] } : {}
+      }),
       
       addCreditCard: (c) => set((s) => ({ creditCards: [...s.creditCards, c] })),
       updateCreditCard: (id, used) => set((s) => ({ creditCards: s.creditCards.map(c => c.id === id ? { ...c, used } : c) })),

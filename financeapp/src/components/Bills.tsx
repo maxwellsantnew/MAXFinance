@@ -1,28 +1,79 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFinanceStore, Category } from '@/lib/store'
 import { formatCurrency, getCurrentMonth, CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/utils'
-import { Plus, X, Check, Trash2 } from 'lucide-react'
+import { Plus, X, Check, Trash2, Pencil, Repeat } from 'lucide-react'
 import { v4 as uuid } from 'uuid'
 
 const BILL_CATEGORIES: Category[] = ['moradia', 'saúde', 'educação', 'transporte', 'lazer', 'cartão', 'outros']
 
 export default function Bills() {
-  const { bills, addBill, toggleBillPaid, removeBill } = useFinanceStore()
+  const { bills, addBill, updateBill, toggleBillPaid, removeBill, rolloverFixedBills } = useFinanceStore()
   const currentMonth = getCurrentMonth()
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ name: '', amount: '', dueDay: '10', category: 'moradia' as Category })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', amount: '', dueDay: '10', category: 'moradia' as Category, isFixed: false })
+
+  useEffect(() => {
+    rolloverFixedBills(currentMonth)
+  }, [currentMonth, rolloverFixedBills])
+
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingId(null)
+    setForm({ name: '', amount: '', dueDay: '10', category: 'moradia', isFixed: false })
+  }
+
+  const openEditModal = (id: string) => {
+    const bill = bills.find(item => item.id === id)
+    if (!bill) return
+    setEditingId(id)
+    setForm({
+      name: bill.name,
+      amount: String(bill.amount),
+      dueDay: String(bill.dueDay),
+      category: bill.category,
+      isFixed: !!bill.isFixed,
+    })
+    setShowModal(true)
+  }
 
   const monthBills = bills.filter(b => b.month === currentMonth)
   const totalPending = monthBills.filter(b => !b.paid).reduce((a, b) => a + b.amount, 0)
   const totalPaid = monthBills.filter(b => b.paid).reduce((a, b) => a + b.amount, 0)
   const total = monthBills.reduce((a, b) => a + b.amount, 0)
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     const amount = parseFloat(form.amount.replace(',', '.'))
     if (!form.name.trim() || isNaN(amount)) return
-    addBill({ id: uuid(), name: form.name.trim(), amount, dueDay: parseInt(form.dueDay), category: form.category, paid: false, month: currentMonth })
-    setForm({ name: '', amount: '', dueDay: '10', category: 'moradia' })
-    setShowModal(false)
+    const dueDay = parseInt(form.dueDay)
+    if (isNaN(dueDay) || dueDay < 1 || dueDay > 31) return
+
+    if (editingId) {
+      const bill = bills.find(item => item.id === editingId)
+      if (!bill) return
+      updateBill(editingId, {
+        name: form.name.trim(),
+        amount,
+        dueDay,
+        category: form.category,
+        isFixed: form.isFixed,
+        templateId: bill.templateId || (form.isFixed ? bill.id : undefined),
+      })
+    } else {
+      const id = uuid()
+      addBill({
+        id,
+        name: form.name.trim(),
+        amount,
+        dueDay,
+        category: form.category,
+        paid: false,
+        month: currentMonth,
+        isFixed: form.isFixed,
+        ...(form.isFixed ? { templateId: id } : {}),
+      })
+    }
+    closeModal()
   }
 
   const pending = monthBills.filter(b => !b.paid).sort((a, b) => a.dueDay - b.dueDay)
@@ -37,7 +88,7 @@ export default function Bills() {
           <h1 className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>Contas do Mês</h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Controle seus compromissos financeiros</p>
         </div>
-        <button className="btn-primary flex items-center gap-1.5 py-2 px-4" onClick={() => setShowModal(true)}>
+        <button className="btn-primary flex items-center gap-1.5 py-2 px-4" onClick={() => { setEditingId(null); setForm({ name: '', amount: '', dueDay: '10', category: 'moradia', isFixed: false }); setShowModal(true) }}>
           <Plus size={16} /> Nova
         </button>
       </div>
@@ -83,13 +134,16 @@ export default function Bills() {
                   {CATEGORY_ICONS[bill.category]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{bill.name}</p>
+                  <p className="text-sm font-medium flex items-center gap-1.5">{bill.name}{bill.isFixed && <Repeat size={13} style={{ color: 'var(--text-muted)' }} />}</p>
                   <p className="text-xs mt-0.5" style={{ color: overdue ? '#ef4444' : dueSoon ? '#f59e0b' : 'var(--text-muted)' }}>
                     {overdue ? '🔴 Venceu' : dueSoon ? '🟡 Vence em breve' : '🟢 Vence'} dia {bill.dueDay}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm" style={{ color: overdue ? '#ef4444' : 'var(--text-primary)' }}>{formatCurrency(bill.amount)}</span>
+                  <button onClick={() => openEditModal(bill.id)} className="p-1 rounded-lg hover:bg-blue-500/10 transition-colors" aria-label="Editar conta">
+                    <Pencil size={12} style={{ color: 'var(--text-muted)' }} />
+                  </button>
                   <button onClick={() => removeBill(bill.id)} className="p-1 rounded-lg hover:bg-red-500/10 transition-colors">
                     <Trash2 size={12} style={{ color: 'var(--text-muted)' }} />
                   </button>
@@ -113,11 +167,14 @@ export default function Bills() {
                 {CATEGORY_ICONS[bill.category]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium line-through" style={{ color: 'var(--text-secondary)' }}>{bill.name}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Paga ✓</p>
+                <p className="text-sm font-medium line-through flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>{bill.name}{bill.isFixed && <Repeat size={13} style={{ color: 'var(--text-muted)' }} />}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{bill.isFixed ? 'Paga ✓ · volta automaticamente no mês que vem' : 'Paga ✓'}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-sm text-green-400">{formatCurrency(bill.amount)}</span>
+                <button onClick={() => openEditModal(bill.id)} className="p-1 rounded-lg hover:bg-blue-500/10 transition-colors" aria-label="Editar conta">
+                  <Pencil size={12} style={{ color: 'var(--text-muted)' }} />
+                </button>
                 <button onClick={() => removeBill(bill.id)} className="p-1 rounded-lg hover:bg-red-500/10 transition-colors">
                   <Trash2 size={12} style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -137,12 +194,12 @@ export default function Bills() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 flex items-end justify-center p-1 pb-20 sm:p-3 sm:pb-3" onClick={event => { if (event.target === event.currentTarget) closeModal() }} style={{ zIndex: 9999, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
           <div className="modal-sheet animate-slide-up">
             <div className="modal-sheet-header">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>Nova Conta</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>{editingId ? 'Editar Conta' : 'Nova Conta'}</h2>
+              <button onClick={closeModal} className="p-2 rounded-xl" style={{ background: 'var(--bg-card2)' }}><X size={18} /></button>
             </div>
             </div>
 
@@ -179,12 +236,23 @@ export default function Bills() {
                 ))}
               </div>
             </div>
+
+            <label className="flex items-start gap-3 rounded-xl p-3 cursor-pointer" style={{ background: 'var(--bg-card2)', border: '1px solid var(--border)' }}>
+              <input type="checkbox" checked={form.isFixed} onChange={e => setForm(f => ({ ...f, isFixed: e.target.checked }))} className="mt-0.5" />
+              <span>
+                <span className="text-sm font-medium block">Conta fixa</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Repete automaticamente todo mês, sem precisar recadastrar</span>
+              </span>
+            </label>
             </div>
 
             <div className="modal-sheet-footer">
-              <button className="btn-primary w-full py-3" onClick={handleAdd}>Confirmar Conta</button>
+              <button className="btn-primary w-full py-3" onClick={handleSubmit}>{editingId ? 'Salvar Alterações' : 'Confirmar Conta'}</button>
             </div>
           </div>
+          <button onClick={closeModal} className="fixed p-2 rounded-xl" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)', right: 'calc(env(safe-area-inset-right, 0px) + 16px)', zIndex: 10000, background: 'var(--bg-card2)' }} aria-label="Fechar modal">
+            <X size={18} />
+          </button>
         </div>
       )}
     </div>
